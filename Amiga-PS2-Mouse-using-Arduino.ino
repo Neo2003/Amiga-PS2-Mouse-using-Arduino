@@ -27,19 +27,19 @@
 
 #include "PS2Mouse.h"
 
-#define DATA_PIN 12     // D12 from PS2
+#define DATA_PIN  12    // D12 from PS2
 #define CLOCK_PIN 11    // D11 from PS2
 
-#define V_PULSE  2      // D2 to Amiga
-#define H_PULSE  3      // D3 to Amiga
-#define VQ_PLSE  4      // D4 to Amiga
-#define HQ_PLSE  5      // D5 to Amiga
+#define V_PULSE    2    // D2 to Amiga
+#define H_PULSE    3    // D3 to Amiga
+#define VQ_PLSE    4    // D4 to Amiga
+#define HQ_PLSE    5    // D5 to Amiga
 
-#define LMB      6      // D6 (Left Mouse Button) to Amiga
-#define RMB      7      // D7 (Right Mouse Button) to Amuga
-#define MMB      8      // D8 (Middle Mouse Button) to Amiga
+#define LMB        6    // D6 (Left Mouse Button) to Amiga
+#define RMB        7    // D7 (Right Mouse Button) to Amuga
+#define MMB        8    // D8 (Middle Mouse Button) to Amiga
 
-#define ADELAY  75 // default 150 - 100 working
+#define ADELAY    25
 
 uint8_t H[4]  = { LOW, LOW, HIGH, HIGH};
 uint8_t HQ[4] = { LOW, HIGH, HIGH, LOW};
@@ -80,7 +80,6 @@ void AMIGAHorizontalMove() {
 
     delayMicroseconds(ADELAY);
 }
-
 void AMIGAVerticalMove() {
     digitalWrite(V_PULSE, H[QY]);
     digitalWrite(VQ_PLSE, HQ[QY]);
@@ -91,21 +90,17 @@ void AMIGAVerticalMove() {
 void AMIGA_Left() {
     // do a move by setting the port
     AMIGAHorizontalMove();
-
     // advance in the quadrature. sequence
     QX = (QX >= 3) ? 0 : ++QX;
 }
-
 void AMIGA_Right() {
     AMIGAHorizontalMove();
     QX = (QX <= 0) ? 3 : --QX;
 }
-
 void AMIGA_Down() {
     AMIGAVerticalMove();
     QY = QY <= 0 ? 3 : --QY;
 }
-
 void AMIGA_Up() {
     AMIGAVerticalMove();
     QY = QY >= 3 ? 0 : ++QY;
@@ -142,7 +137,7 @@ void setup() {
 void loop() {
     MouseData data = mouse.readData();
     bool wait = true;
-    if( data.status & 1) {
+    if (data.status & 1) {
         LeftButtonDown();
         LeftButtonActive = true;
         //Serial.print(data.status, BIN);
@@ -153,7 +148,7 @@ void loop() {
         //Serial.print(data.status, BIN);
         //Serial.println("\tLeft Button up");
     }
-    if( data.status & 2) {
+    if (data.status & 2) {
         RightButtonDown();
         RightButtonActive = true;
         //Serial.print(data.status, BIN);
@@ -164,7 +159,7 @@ void loop() {
         //Serial.print(data.status, BIN);
         //Serial.println("\tRight Button up");
     }
-    if( data.status & 4) {
+    if (data.status & 4) {
         MiddleButtonDown();
         MiddleButtonActive = true;
         //Serial.print(data.status, BIN);
@@ -181,8 +176,7 @@ void loop() {
         Serial.print("\tx=");
         Serial.print(data.position.x);
         Serial.print("\ty=");
-        Serial.print(data.position.y);
-        Serial.println();*/
+        Serial.println(data.position.y);*/
         if (data.position.x < 0)
         {
             AMIGA_Left();
