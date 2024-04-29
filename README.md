@@ -1,5 +1,6 @@
 # Amiga-PS2-Mouse-using-Arduino
-Connect a PS/2 Mouse or PS/2 Touchpad to an Amiga
+Connect a PS/2 Mouse or PS/2 Touchpad to an Amiga.
+It does supports up to 3 buttons mices, acceleration and double tap click on touchpad.
 
 ## What is needed:
 
@@ -48,7 +49,7 @@ Plug the DB9 on the mouse port of the Amiga, mouse should work as an Amiga mouse
     https://github.com/cssvb94/AmigaUSBMouseJoystick
 
 
-  - Don M (glitterkitty) for the old version of this code not working anymore
+  - Don M (glitterkitty) for the old version basic version of this code not working anymore
     https://github.com/glitterkitty/Arduino-PS2-Mouse-to-Amiga-Adapter
   
 
