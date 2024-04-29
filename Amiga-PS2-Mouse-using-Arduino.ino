@@ -38,17 +38,20 @@
 #define LMB        6    // D6 (Left Mouse Button) to Amiga
 #define RMB        7    // D7 (Right Mouse Button) to Amuga
 #define MMB        8    // D8 (Middle Mouse Button) to Amiga
+#define SAMPLING   480  // Size of sampling to complete it in 25ms (PS/2 sampling rate of 40)
 
-#define ADELAY    25
-
-uint8_t H[4]  = { LOW, LOW, HIGH, HIGH};
-uint8_t HQ[4] = { LOW, HIGH, HIGH, LOW};
+uint8_t H[4]  = { LOW, LOW, HIGH, HIGH };
+uint8_t HQ[4] = { LOW, HIGH, HIGH, LOW };
 
 uint8_t QX = 3;
 uint8_t QY = 3;
 bool LeftButtonActive = false;
 bool RightButtonActive = false;
 bool MiddleButtonActive = false;
+uint8_t XSTEPS;
+uint8_t YSTEPS;
+uint8_t XSIGN;
+uint8_t YSIGN;
 
 PS2Mouse mouse(CLOCK_PIN, DATA_PIN);
 
@@ -77,14 +80,10 @@ void AMIGAHorizontalMove() {
     // set bits acc. to curr. position in quadr. sequence
     digitalWrite(H_PULSE, H[QX]);
     digitalWrite(HQ_PLSE, HQ[QX]);
-
-    delayMicroseconds(ADELAY);
 }
 void AMIGAVerticalMove() {
     digitalWrite(V_PULSE, H[QY]);
     digitalWrite(VQ_PLSE, HQ[QY]);
-    
-    delayMicroseconds(ADELAY);
 }
 
 void AMIGA_Left() {
@@ -136,7 +135,9 @@ void setup() {
 
 void loop() {
     MouseData data = mouse.readData();
-    bool wait = true;
+    //data.position.x = 120;
+    //data.position.y = -120;
+    uint32_t temps = micros();
     if (data.status & 1) {
         LeftButtonDown();
         LeftButtonActive = true;
@@ -170,35 +171,44 @@ void loop() {
         //Serial.print(data.status, BIN);
         //Serial.println("\tMiddle Button up");
     }
-    while (data.position.x != 0 || data.position.y != 0) {
-        wait = false;
-        /*Serial.print(data.status, BIN);
-        Serial.print("\tx=");
-        Serial.print(data.position.x);
-        Serial.print("\ty=");
-        Serial.println(data.position.y);*/
-        if (data.position.x < 0)
-        {
-            AMIGA_Left();
-            data.position.x++;
-        }
-        else if (data.position.x > 0)
-        {
-            AMIGA_Right();
-            data.position.x--;
-        }
-  
-        if (data.position.y < 0)
-        {
-            AMIGA_Down();
-            data.position.y++;
-        }
-        else if (data.position.y > 0)
-        {
-            AMIGA_Up();
-            data.position.y--;
+    if (data.position.x != 0 || data.position.y != 0) {
+        XSTEPS = abs(data.position.x);
+        YSTEPS = abs(data.position.y);
+        XSIGN = (data.position.x > 0 ? 1 : 0) ;
+        YSIGN = (data.position.y > 0 ? 1 : 0) ;
+
+        float dx = (XSTEPS > 0 ? SAMPLING / XSTEPS : 0);
+        float dy = (YSTEPS > 0 ? SAMPLING / YSTEPS : 0);
+
+        float valx = dx;
+        float valy = dy;
+
+        for (int i=1;i<=SAMPLING;++i) {
+            if (int(valx)==i) {
+                // play quadrature
+                if (XSIGN)
+                    AMIGA_Right();
+                else
+                    AMIGA_Left();
+                valx+=dx;
+            } else {
+                delayMicroseconds(20);
+            }
+    
+            if (int(valy)==i) {
+                // play quadrature
+                if (YSIGN)
+                    AMIGA_Up();
+                else
+                    AMIGA_Down();
+                valy+=dy;
+            } else {
+                delayMicroseconds(20);
+            }
         }
     }
-    if (wait)
-        delay(15);
+    else
+        delay(24);
+    Serial.print("Time taken : ");
+    Serial.println(micros()-temps);
 }
