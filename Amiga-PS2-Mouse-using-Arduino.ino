@@ -26,6 +26,7 @@
  */
 
 #include "PS2Mouse.h"
+#include "MiniTimer.h"
 
 #define CLOCK_PIN 11    // D11 from PS2
 #define DATA_PIN  12    // D12 from PS2
@@ -49,10 +50,15 @@ uint8_t QY = 3;
 bool LeftButtonActive = false;
 bool RightButtonActive = false;
 bool MiddleButtonActive = false;
+bool HasWord = true;
 uint8_t XSTEPS;
 uint8_t YSTEPS;
 uint8_t XSIGN;
 uint8_t YSIGN;
+
+enum _state_t {STATE_HALT, STATE_RUN};
+MiniTimer timer;
+_state_t state;
 
 PS2Mouse mouse(CLOCK_PIN, DATA_PIN);
 
@@ -103,11 +109,7 @@ void AMIGA_Up() {
     QY = QY >= 3 ? 0 : ++QY;
 }
 
-void setup() {
-    Serial.begin(57600); // Just setup the communication if you ever need it
-    mouse.initialize();
-    Serial.println("Hello from PS2 to Amiga mouse adapter by Rodrik");
-    
+void activate_pins() {
     // Set button and quadrature output pins to output
     pinMode(V_PULSE, OUTPUT);  // V-Pulse
     pinMode(H_PULSE, OUTPUT);  // H-Pulse
@@ -116,32 +118,80 @@ void setup() {
     pinMode(LMB, OUTPUT);  // LMB
     pinMode(RMB, OUTPUT);  // RMB
     pinMode(MMB, OUTPUT);  // MMB
-        
+
     // Set quadrature output pins to low
     digitalWrite(V_PULSE, LOW);
     digitalWrite(H_PULSE, LOW);
     digitalWrite(VQ_PLSE, LOW);
-    digitalWrite(HQ_PLSE, LOW);
-    
+    digitalWrite(HQ_PLSE, LOW); 
+
     // Set mouse button output pins to high, they are inverted
     digitalWrite(LMB, HIGH);
     digitalWrite(RMB, HIGH);
     digitalWrite(MMB, HIGH);
-    
-    delay(200);  
+    state = STATE_RUN;
+
+    delay(50);
+}
+
+void free_pins() {
+    pinMode(V_PULSE, INPUT);  // V-Pulse
+    pinMode(H_PULSE, INPUT);  // H-Pulse
+    pinMode(VQ_PLSE, INPUT);  // VQ-pulse
+    pinMode(HQ_PLSE, INPUT);  // HQ-pulse
+    pinMode(LMB, INPUT);  // LMB
+    pinMode(RMB, INPUT);  // RMB
+    pinMode(MMB, INPUT);  // MMB
+    digitalWrite(V_PULSE, LOW);
+    digitalWrite(H_PULSE, LOW);
+    digitalWrite(VQ_PLSE, LOW);
+    digitalWrite(HQ_PLSE, LOW);
+    // Nothing moved so button are all high already, will be INPUT_PULLUP
+    state = STATE_HALT;
+    delay(50);
+}
+
+void setup() {
+    Serial.begin(57600); // Just setup the communication if you ever need it
+    mouse.initialize();
+    Serial.println("Hello from PS2 to Amiga mouse adapter by Rodrik");
+    activate_pins();
+    timer.start(); 
 }
 
 void loop() {
     MouseData data = mouse.readData();  // Get the data from PS2 1/40 sec = 25 ms
     uint32_t temps = micros();
+    bool activity = data.status & 1 || data.status & 2 || data.status & 4 || data.position.x != 0 || data.position.y != 0;
+    if (state == STATE_HALT && activity) {
+        activate_pins();
+        timer.start(); 					// this resets the timer
+    } else {
+        //Serial.println(timer.read());
+        if (state == STATE_RUN && timer.read() > 5000) {
+            timer.stop();
+            free_pins();	
+        }
+    }
+    if (activity)
+        timer.start();
+    if (state == STATE_HALT) {
+        //Serial.println("Halted");
+        delay(24);
+        return;
+    }
     if (data.status & 1) {              // Let's remember to not toggle a pin already properly set
         if (!LeftButtonActive) {
             LeftButtonDown();
             LeftButtonActive = true;
+            //Serial.print(data.status, BIN);
+            //Serial.println("\tLeft Button down");
         }
     } else if (LeftButtonActive) {
         LeftButtonUp();
         LeftButtonActive = false;
+        //Serial.print(data.status, BIN);
+        //Serial.println("\tLeft Button up");
     }
     if (data.status & 2) {
         if (!RightButtonActive) {
