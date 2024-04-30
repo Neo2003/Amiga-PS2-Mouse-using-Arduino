@@ -3,7 +3,7 @@
  * Amiga mouse-port version 2024 by Rodrik *
  * *****************************************
  * 
- * Looking at the Amiga:
+ * Mouse port of the Amiga:
  * 9 PIN D-SUB MALE
  * 
  *   _________________________
@@ -27,8 +27,8 @@
 
 #include "PS2Mouse.h"
 
-#define DATA_PIN  12    // D12 from PS2
 #define CLOCK_PIN 11    // D11 from PS2
+#define DATA_PIN  12    // D12 from PS2
 
 #define V_PULSE    2    // D2 to Amiga
 #define H_PULSE    3    // D3 to Amiga
@@ -38,7 +38,8 @@
 #define LMB        6    // D6 (Left Mouse Button) to Amiga
 #define RMB        7    // D7 (Right Mouse Button) to Amuga
 #define MMB        8    // D8 (Middle Mouse Button) to Amiga
-#define SAMPLING   480  // Size of sampling to complete it in 25ms (PS/2 sampling rate of 40)
+
+#define SAMPLING   480  // Size of sampling to complete it in 25ms (PS/2 sampling rate at 40/sec)
 
 uint8_t H[4]  = { LOW, LOW, HIGH, HIGH };
 uint8_t HQ[4] = { LOW, HIGH, HIGH, LOW };
@@ -74,10 +75,8 @@ void MiddleButtonDown() {
     digitalWrite(MMB, LOW);
 }
 
-// X/Y moves
-//
+// X/Y moves - Set pins according to current position in quadrature sequence
 void AMIGAHorizontalMove() {
-    // set bits acc. to curr. position in quadr. sequence
     digitalWrite(H_PULSE, H[QX]);
     digitalWrite(HQ_PLSE, HQ[QX]);
 }
@@ -86,10 +85,9 @@ void AMIGAVerticalMove() {
     digitalWrite(VQ_PLSE, HQ[QY]);
 }
 
+// Call the move and update the position in quadrature sequence in proper direction
 void AMIGA_Left() {
-    // do a move by setting the port
     AMIGAHorizontalMove();
-    // advance in the quadrature. sequence
     QX = (QX >= 3) ? 0 : ++QX;
 }
 void AMIGA_Right() {
@@ -106,7 +104,7 @@ void AMIGA_Up() {
 }
 
 void setup() {
-    Serial.begin(57600);
+    Serial.begin(57600); // Just setup the communication if you ever need it
     mouse.initialize();
     Serial.println("Hello from PS2 to Amiga mouse adapter by Rodrik");
     
@@ -119,13 +117,13 @@ void setup() {
     pinMode(RMB, OUTPUT);  // RMB
     pinMode(MMB, OUTPUT);  // MMB
         
-    // Set quadrature output pins to zero
+    // Set quadrature output pins to low
     digitalWrite(V_PULSE, LOW);
     digitalWrite(H_PULSE, LOW);
     digitalWrite(VQ_PLSE, LOW);
     digitalWrite(HQ_PLSE, LOW);
     
-    // Set mouse button output pins to on, because they are inverted
+    // Set mouse button output pins to high, they are inverted
     digitalWrite(LMB, HIGH);
     digitalWrite(RMB, HIGH);
     digitalWrite(MMB, HIGH);
@@ -134,42 +132,34 @@ void setup() {
 }
 
 void loop() {
-    MouseData data = mouse.readData();
-    //data.position.x = 120;
-    //data.position.y = -120;
+    MouseData data = mouse.readData();  // Get the data from PS2 1/40 sec = 25 ms
     uint32_t temps = micros();
-    if (data.status & 1) {
-        LeftButtonDown();
-        LeftButtonActive = true;
-        //Serial.print(data.status, BIN);
-        //Serial.println("\tLeft Button down");
+    if (data.status & 1) {              // Let's remember to not toggle a pin already properly set
+        if (!LeftButtonActive) {
+            LeftButtonDown();
+            LeftButtonActive = true;
+        }
     } else if (LeftButtonActive) {
         LeftButtonUp();
         LeftButtonActive = false;
-        //Serial.print(data.status, BIN);
-        //Serial.println("\tLeft Button up");
     }
     if (data.status & 2) {
-        RightButtonDown();
-        RightButtonActive = true;
-        //Serial.print(data.status, BIN);
-        //Serial.println("\tRight Button down");
+        if (!RightButtonActive) {
+            RightButtonDown();
+            RightButtonActive = true;
+        }
     } else if (RightButtonActive) {
         RightButtonUp();
         RightButtonActive = false;
-        //Serial.print(data.status, BIN);
-        //Serial.println("\tRight Button up");
     }
     if (data.status & 4) {
-        MiddleButtonDown();
-        MiddleButtonActive = true;
-        //Serial.print(data.status, BIN);
-        //Serial.println("\tMiddle Button down");
+        if (!MiddleButtonActive) {
+            MiddleButtonDown();
+            MiddleButtonActive = true;
+        }
     } else if (MiddleButtonActive){
         MiddleButtonUp();
         MiddleButtonActive = false;
-        //Serial.print(data.status, BIN);
-        //Serial.println("\tMiddle Button up");
     }
     if (data.position.x != 0 || data.position.y != 0) {
         XSTEPS = abs(data.position.x);
@@ -177,25 +167,25 @@ void loop() {
         XSIGN = (data.position.x > 0 ? 1 : 0) ;
         YSIGN = (data.position.y > 0 ? 1 : 0) ;
 
-        float dx = (XSTEPS > 0 ? SAMPLING / XSTEPS : 0);
+        float dx = (XSTEPS > 0 ? SAMPLING / XSTEPS : 0); // Divide the array by number of pulses
         float dy = (YSTEPS > 0 ? SAMPLING / YSTEPS : 0);
 
         float valx = dx;
         float valy = dy;
 
-        for (int i=1;i<=SAMPLING;++i) {
-            if (int(valx)==i) {
+        for (int i=1;i<=SAMPLING;++i) { // Loop into the array
+            if (int(valx)==i) {         // and progress the quadrature if we are on a divider
                 // play quadrature
                 if (XSIGN)
                     AMIGA_Right();
                 else
                     AMIGA_Left();
-                valx+=dx;
+                valx+=dx;               // Next pulse
             } else {
-                delayMicroseconds(20);
+                delayMicroseconds(20);  // No pulse, then we need to compensate the not spent 20 micro seconds 
             }
     
-            if (int(valy)==i) {
+            if (int(valy)==i) {         // Same for Y
                 // play quadrature
                 if (YSIGN)
                     AMIGA_Up();
@@ -208,7 +198,7 @@ void loop() {
         }
     }
     else
-        delay(24);
+        delay(24); // No movement, then compensate the 24 ms not spent
     Serial.print("Time taken : ");
     Serial.println(micros()-temps);
 }
