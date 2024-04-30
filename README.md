@@ -8,7 +8,7 @@ It resumes automatically when the touchpad or mouse plusgged internaly moves or 
 
   - An Arduino (Nano/Uno/Mini/...)
   - A PS/2 Mouse ou Touchpad (or a USB mouse with a USB to PS/2 adapter)
-  - Female DB9 (to connect to the Amiga port externaly)
+  - Some soldering to connect the Arduino to the pin of the Amiga port DB9 internaly
   
 ## Connection:
 ```
