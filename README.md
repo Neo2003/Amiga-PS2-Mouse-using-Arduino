@@ -1,6 +1,8 @@
 # Amiga-PS2-Mouse-using-Arduino
-Connect a PS/2 Mouse or PS/2 Touchpad to an Amiga.
-It does supports up to 3 buttons mices, acceleration and double tap click on touchpad.
+Connect a PS/2 Mouse or PS/2 Touchpad internaly to an Amiga.
+It does supports up to 3 buttons mices, acceleration and tap click on touchpad.
+This version includes a timer and disable itself after 5 secondes of inactivity. This allow the use of mouse or joystik plugged to the DB9 externaly while this version is soldered in the DB9 pins internaly.
+It resumes automatically when the touchpad or mouse plusgged internaly moves or click.
 
 ## What is needed:
 
