@@ -1,6 +1,6 @@
 # Amiga-PS2-Mouse-using-Arduino
 Connect a PS/2 Mouse or PS/2 Touchpad to an Amiga.
-It does supports up to 3 buttons mices, acceleration and double tap click on touchpad.
+It does supports up to 3 buttons mices, acceleration and tap click on touchpad.
 
 ## What is needed:
 
