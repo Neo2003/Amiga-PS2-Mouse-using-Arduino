@@ -130,8 +130,6 @@ void activate_pins() {
     digitalWrite(RMB, HIGH);
     digitalWrite(MMB, HIGH);
     state = STATE_RUN;
-
-    delay(50);
 }
 
 void free_pins() {
@@ -148,7 +146,6 @@ void free_pins() {
     digitalWrite(HQ_PLSE, LOW);
     // Nothing moved so button are all high already, will be INPUT_PULLUP
     state = STATE_HALT;
-    delay(50);
 }
 
 void setup() {
