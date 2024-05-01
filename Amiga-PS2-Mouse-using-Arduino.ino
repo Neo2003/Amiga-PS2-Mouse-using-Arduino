@@ -127,8 +127,6 @@ void setup() {
     digitalWrite(LMB, HIGH);
     digitalWrite(RMB, HIGH);
     digitalWrite(MMB, HIGH);
-    
-    delay(200);  
 }
 
 void loop() {
